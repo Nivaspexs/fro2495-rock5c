@@ -1,0 +1,9 @@
+/home/fro2495/fro2495-rock5c/drivers/libuvc-theta/build/CMakeFiles/uvc.dir
+/home/fro2495/fro2495-rock5c/drivers/libuvc-theta/build/CMakeFiles/uvc_static.dir
+/home/fro2495/fro2495-rock5c/drivers/libuvc-theta/build/CMakeFiles/example.dir
+/home/fro2495/fro2495-rock5c/drivers/libuvc-theta/build/CMakeFiles/edit_cache.dir
+/home/fro2495/fro2495-rock5c/drivers/libuvc-theta/build/CMakeFiles/rebuild_cache.dir
+/home/fro2495/fro2495-rock5c/drivers/libuvc-theta/build/CMakeFiles/list_install_components.dir
+/home/fro2495/fro2495-rock5c/drivers/libuvc-theta/build/CMakeFiles/install.dir
+/home/fro2495/fro2495-rock5c/drivers/libuvc-theta/build/CMakeFiles/install/local.dir
+/home/fro2495/fro2495-rock5c/drivers/libuvc-theta/build/CMakeFiles/install/strip.dir

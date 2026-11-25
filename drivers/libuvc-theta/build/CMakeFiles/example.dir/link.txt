@@ -1,0 +1,1 @@
+/usr/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/example.dir/link.d CMakeFiles/example.dir/src/example.c.o -o example  -Wl,-rpath,/home/fro2495/fro2495-rock5c/drivers/libuvc-theta/build libuvc.so.0.0.6
