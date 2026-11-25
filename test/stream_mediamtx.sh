@@ -9,6 +9,7 @@ UVC_PID="${UVC_PID:-602a}"
 UVC_RTSP_URL="${UVC_RTSP_URL:-rtsp://34.0.54.215:8554/iocplus}"
 UVC_BPS="${UVC_BPS:-8000000}"
 UVC_GOP="${UVC_GOP:-30}"
+UVC_FPS="${UVC_FPS:-30}"
 
 PID_THETA=""
 PID_UVC=""
@@ -109,12 +110,14 @@ fi
 if ! command -v gst-launch-1.0 >/dev/null 2>&1; then
     echo "[stream_mediamtx] Aviso: gst-launch-1.0 no está instalado. Se omite cámara intraoral UVC." >&2
 elif UVC_DEV="$(find_uvc_device)"; then
-    echo "[stream_mediamtx] Iniciando UVC IOCplus+ ($UVC_DEV) -> H.265 -> $UVC_RTSP_URL"
-    gst-launch-1.0 -e -v \
+    echo "[stream_mediamtx] Iniciando UVC IOCplus+ ($UVC_DEV) -> H.265 (${UVC_FPS} fps) -> $UVC_RTSP_URL"
+    gst-launch-1.0 -e \
         v4l2src device="$UVC_DEV" io-mode=2 do-timestamp=true ! \
         queue leaky=downstream max-size-buffers=2 ! \
+        videorate drop-only=true ! \
+        "video/x-raw,framerate=${UVC_FPS}/1" ! \
         videoconvert n-threads=4 ! \
-        video/x-raw,format=NV12 ! \
+        "video/x-raw,format=NV12,framerate=${UVC_FPS}/1" ! \
         queue leaky=downstream max-size-buffers=2 ! \
         mpph265enc rc-mode=cbr bps="$UVC_BPS" gop="$UVC_GOP" ! \
         h265parse config-interval=-1 ! \
