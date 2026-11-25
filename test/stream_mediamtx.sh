@@ -6,28 +6,38 @@ GST_MEDIAMTX="${GST_MEDIAMTX:-$SCRIPT_DIR/gst/gst_mediamtx}"
 
 UVC_VID="${UVC_VID:-0403}"
 UVC_PID="${UVC_PID:-602a}"
-UVC_RTSP_URL="${UVC_RTSP_URL:-rtsp://34.0.54.215:8554/mouthwatch}"
-UVC_BPS="${UVC_BPS:-15000000}"
+UVC_RTSP_URL="${UVC_RTSP_URL:-rtsp://34.0.54.215:8554/iocplus}"
+UVC_BPS="${UVC_BPS:-8000000}"
 UVC_GOP="${UVC_GOP:-30}"
 
 PID_THETA=""
 PID_UVC=""
 
+stop_proc() {
+    local pid="$1"
+    [[ -n "$pid" ]] || return 0
+    if kill -0 "$pid" 2>/dev/null; then
+        pkill -TERM -P "$pid" 2>/dev/null || true
+        kill -TERM "$pid" 2>/dev/null || true
+        for _ in 1 2 3 4 5 6 7 8; do
+            kill -0 "$pid" 2>/dev/null || return 0
+            sleep 0.2
+        done
+        pkill -KILL -P "$pid" 2>/dev/null || true
+        kill -KILL "$pid" 2>/dev/null || true
+    fi
+}
+
 cleanup() {
-    local sig="${1:-TERM}"
     trap - INT TERM EXIT
-    if [[ -n "$PID_UVC" ]] && kill -0 "$PID_UVC" 2>/dev/null; then
-        kill "-$sig" "$PID_UVC" 2>/dev/null || true
-    fi
-    if [[ -n "$PID_THETA" ]] && kill -0 "$PID_THETA" 2>/dev/null; then
-        kill "-$sig" "$PID_THETA" 2>/dev/null || true
-    fi
+    stop_proc "$PID_UVC"
+    stop_proc "$PID_THETA"
     wait 2>/dev/null || true
 }
 
-trap 'cleanup INT' INT
-trap 'cleanup TERM' TERM
-trap 'cleanup TERM' EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
+trap 'cleanup' EXIT
 
 find_uvc_device() {
     if [[ -n "${UVC_DEVICE:-}" ]]; then
@@ -100,15 +110,15 @@ if ! command -v gst-launch-1.0 >/dev/null 2>&1; then
     echo "[stream_mediamtx] Aviso: gst-launch-1.0 no está instalado. Se omite cámara intraoral UVC." >&2
 elif UVC_DEV="$(find_uvc_device)"; then
     echo "[stream_mediamtx] Iniciando UVC IOCplus+ ($UVC_DEV) -> H.265 -> $UVC_RTSP_URL"
-    gst-launch-1.0 -e \
-        v4l2src device="$UVC_DEV" ! \
-        queue ! \
-        videoconvert ! \
+    gst-launch-1.0 -e -v \
+        v4l2src device="$UVC_DEV" io-mode=2 do-timestamp=true ! \
+        queue leaky=downstream max-size-buffers=2 ! \
+        videoconvert n-threads=4 ! \
         video/x-raw,format=NV12 ! \
-        queue ! \
+        queue leaky=downstream max-size-buffers=2 ! \
         mpph265enc rc-mode=cbr bps="$UVC_BPS" gop="$UVC_GOP" ! \
         h265parse config-interval=-1 ! \
-        queue ! \
+        queue leaky=downstream max-size-buffers=4 ! \
         rtspclientsink location="$UVC_RTSP_URL" latency=0 protocols=tcp &
     PID_UVC=$!
 else
